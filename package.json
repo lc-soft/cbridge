@@ -1,0 +1,38 @@
+{
+  "name": "cbridge",
+  "version": "0.1.0",
+  "description": "An API export tool used to create other naming style APIs and C++ bindings for C libraries.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "liu <lc-soft@live.cn>",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.24.1"
+  },
+  "dependencies": {
+    "change-case": "^4.1.2",
+    "verb-corpus": "^1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lc-soft/cbridge.git"
+  },
+  "keywords": [
+    "c",
+    "cpp",
+    "api",
+    "tool",
+    "binding"
+  ],
+  "bugs": {
+    "url": "https://github.com/lc-soft/cbridge/issues"
+  },
+  "homepage": "https://github.com/lc-soft/cbridge#readme"
+}
