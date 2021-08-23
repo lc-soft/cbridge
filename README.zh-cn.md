@@ -101,7 +101,7 @@ module.exports = {
 
 ```
 
-示例输出的 C 头文件内容如下：
+输出的 C 头文件内容会是这样：
 
 ```c
 typedef ui_widget_t 图形界面库_界面组件;

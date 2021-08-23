@@ -101,7 +101,7 @@ module.exports = {
 
 ```
 
-示例输出的 C 头文件内容如下：
+The content of the output C header file will look like this:
 
 ```c
 typedef ui_widget_t 图形界面库_界面组件;
@@ -114,6 +114,6 @@ typedef ui_widget_t 图形界面库_界面组件;
 #define ui_widget_update 图形界面库_更新界面组件
 ```
 
-## 许可
+## License
 
 [MIT](LICENSE)
