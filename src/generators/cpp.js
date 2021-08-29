@@ -24,16 +24,19 @@ function convert(data, config) {
   const translator = new Translator(config.dict, config.useDict);
   const translate = translator.translate.bind(translator);
   const typeConverters = {
-    '<Object>': (name) => translate(name) || pascalCase(name),
+    PascalCase: (name) => translate(name) || pascalCase(name),
   };
   const classConverters = {
-    '<Object>': (name) => translate(name) || pascalCase(name),
+    PascalCase: (name) => translate(name) || pascalCase(name),
   };
   const methodConverters = {
-    '<Action>[Object]': (func) => [
-      translate(func.action) || pascalCase(func.action),
-      func.property && (translate(func.property) || pascalCase(func.property)),
-    ].filter(Boolean).join('_'),
+    PascalCase: (func) => [
+      translate(func.operate) || pascalCase(func.operate),
+      func.target && (translate(func.target) || pascalCase(func.target)),
+    ].join(''),
+  };
+  const functionConverters = {
+    PascalCase: methodConverters.PascalCase,
   };
 
   const classes = {};
@@ -47,6 +50,7 @@ function convert(data, config) {
   const convertTypeName = typeConverters[config.typeNaming];
   const convertClassName = classConverters[config.classNaming];
   const convertMethodName = methodConverters[config.methodNaming];
+  const convertFunctionName = functionConverters[config.functionNaming];
 
   function allocNamespace(name) {
     if (!namespaces[name]) {
@@ -85,15 +89,19 @@ function convert(data, config) {
       return true;
     }
     const clsFunc = { ...func, name: convertMethodName(func) };
-    if (config.constructorName.includes(clsFunc.action)) {
-      classDecl.constructor = clsFunc;
-    } else if (config.destructorName.includes(clsFunc.action)) {
-      classDecl.destructor = clsFunc;
-    } else {
-      classDecl.methods.push(clsFunc);
+    if (!clsFunc.target) {
+      if (config.constructorName.includes(clsFunc.operate)) {
+        classDecl.constructor = clsFunc;
+        return false;
+      }
+      if (config.destructorName.includes(clsFunc.operate)) {
+        classDecl.destructor = clsFunc;
+        return false;
+      }
     }
+    classDecl.methods.push(clsFunc);
     return false;
-  });
+  }).map((func) => ({ ...func, name: convertFunctionName(func) }));
   Object.keys(classes).forEach((typeName) => {
     const classDecl = classes[typeName];
     if (classDecl.methods.length > 0) {
@@ -116,6 +124,9 @@ function convert(data, config) {
 }
 
 function generateArgs(args, start) {
+  if (!args) {
+    return '';
+  }
   return args.slice(start).map((arg) => `${arg.type} ${arg.name}`.trim()).join(', ') || 'void';
 }
 
@@ -190,23 +201,29 @@ function generateSourceFile(namespaces, config) {
     ns.classes.forEach((cls) => {
       const prefix = `${ns.name}::${cls.name}::`;
       if (cls.constructor) {
-        write(`${prefix}${cls.constructor.name}(${generateArgs(cls.constructor.args, 1)}`);
+        write(`${prefix}${cls.name}(${generateArgs(cls.constructor.args)}`);
         write('{');
         writer.indent += 1;
         write(`this.data = ${cls.constructor.cname}(${cls.constructor.args.map((arg) => arg.name).join(', ')});`);
-        writer.indent -= 1;
-        write('}');
-        write('');
-      }
-      if (cls.destructor) {
-        write(`~${prefix}${cls.destructor.name}()`);
+      } else {
+        write(`${prefix}${cls.name}(${cls.type.cname} data)`);
         write('{');
         writer.indent += 1;
-        write(`${cls.destructor.cname}(${this.data})`);
-        writer.indent -= 1;
-        write('}');
-        write('');
+        write('this.data = data;');
       }
+      writer.indent -= 1;
+      write('}');
+      write('');
+      write(`${prefix}~${cls.name}()`);
+      write('{');
+      writer.indent += 1;
+      if (cls.destructor) {
+        write(`${cls.destructor.cname}(this.data);`);
+      }
+      write('this.data = nullptr;');
+      writer.indent -= 1;
+      write('}');
+      write('');
       cls.methods.forEach((method) => {
         write(`${method.returnType} ${prefix}${method.name}(${generateArgs(method.args, 1)})`);
         write('{');

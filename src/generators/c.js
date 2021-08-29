@@ -6,40 +6,38 @@ const Translator = require('../translator');
 
 function generate(data, config) {
   const translator = new Translator(config.dict, config.useDict);
-  const translate = translator.translate.bind(translator);
   const typeGenerators = {
-    '<NAMESPACE>_[Namespace]<Object>': (type) => {
+    '[<NAMESPACE>_][Namespace]<Object>': (type) => {
       let newName = '';
+      const translate = (str) => translator.translate(str) || pascalCase(str);
 
       if (config.namespace) {
         newName = `${config.namespace.toUpperCase()}_`;
-      } else {
-        console.warn('the root namespace is not specified');
       }
-      newName += [type.namespace, type.name]
-        .filter(Boolean)
-        .map((word) => translate(word) || pascalCase(word))
-        .join('');
+      if (type.namespace) {
+        newName += translate(type.namespace);
+      }
+      newName += translate(type.name);
       return `typedef ${type.cname} ${newName};`;
     },
   };
 
   const functionGenerators = {
-    '<NAMESPACE>_<Action>[Namespace]<Object>': (func) => {
+    '[<NAMESPACE>_][<Namespace>_][Object]<Method>': (func) => {
       let newName = '';
+      const translate = (str) => translator.translate(str) || pascalCase(str);
 
       if (config.namespace) {
         newName = `${config.namespace.toUpperCase()}_`;
-      } else {
-        console.warn('the root namespace is not specified');
       }
-      newName += [
-        func.action,
-        func.namespace,
-        func.object,
-        func.property,
-      ].filter(Boolean).map((word) => translate(word) || pascalCase(word)).join('');
-
+      if (func.namespace) {
+        newName += `${translate(func.namespace) || func.namespace.toUpperCase()}_`;
+      }
+      if (func.object) {
+        newName += translate(func.object);
+      }
+      newName += translate(func.operate);
+      newName += translate(func.target);
       return `#define ${func.cname} ${newName}`;
     },
   };

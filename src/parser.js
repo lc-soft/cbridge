@@ -1,6 +1,6 @@
 const verbs = require('verb-corpus');
 
-const verbSet = new Set(verbs);
+const verbSet = new Set([...verbs, 'init']);
 
 function createTypeParser(config) {
   const namespaces = new Set(config.namespaces);
@@ -35,7 +35,7 @@ function createTypeParser(config) {
 function createFunctionParser(config) {
   const namespaces = new Set(config.namespaces);
   const functionParsers = {
-    '[<namespace>_]<object>_<action>[_<object>]': (func) => {
+    '[<namespace>_][<object>_]<method>': (func) => {
       let words = func.name.split('_');
       const prefix = words[0];
       const parsedFunc = {
@@ -43,8 +43,8 @@ function createFunctionParser(config) {
         cname: func.name,
         namespace: '',
         object: '',
-        action: '',
-        property: '',
+        operate: '',
+        target: '',
       };
 
       if (namespaces.has(prefix)) {
@@ -52,15 +52,15 @@ function createFunctionParser(config) {
         parsedFunc.namespace = prefix;
         parsedFunc.name = words.join('_');
       }
-      if (words.length === 1) {
-        [parsedFunc.action] = words;
-      } else if (words.length >= 2) {
+      if (words.length > 0) {
+        [parsedFunc.operate] = words;
         if (verbSet.has(words[0])) {
-          [parsedFunc.action] = words;
-          parsedFunc.property = words.slice(1).join('_');
+          [parsedFunc.operate] = words;
+          parsedFunc.target = words.slice(1).join('_');
         } else {
-          [parsedFunc.object, parsedFunc.action] = words;
-          parsedFunc.property = words.slice(2).join('_');
+          [parsedFunc.object] = words;
+          parsedFunc.operate = words[1] || '';
+          parsedFunc.target = words.slice(2).join('_');
         }
       }
       return parsedFunc;
